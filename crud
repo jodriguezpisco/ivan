@@ -1,0 +1,159 @@
+CREATE DATABASE IF NOT EXISTS crud_example;
+
+USE crud_example;
+
+CREATE TABLE IF NOT EXISTS usuarios (
+    usua_id INT AUTO_INCREMENT PRIMARY KEY,
+    usua_nombre VARCHAR(50) NOT NULL,
+    usua_clave VARCHAR(20) NOT NULL
+);
+
+index.php
+
+<?php include 'conexion.php'; ?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD Example</title>
+</head>
+<body>
+    <h1>CRUD Example</h1>
+
+    <h2>Add User</h2>
+    <form action="crear.php" method="post">
+        Nombre: <input type="text" name="usua_nombre" required><br>
+        Clave: <input type="password" name="usua_clave" required><br>
+        <input type="submit" value="Agregar">
+    </form>
+
+    <h2>Users List</h2>
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Clave</th>
+            <th>Acciones</th>
+        </tr>
+        <?php
+        $sql = "SELECT * FROM usuario";
+        $result = $conn->query($sql);
+
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                echo "<tr>";
+                echo "<td>" . $row["usua_id"] . "</td>";
+                echo "<td>" . $row["usua_nombre"] . "</td>";
+                echo "<td>" . $row["usua_clave"] . "</td>";
+                echo "<td><a href='editar.php?id=" . $row["usua_id"] . "'>Editar</a> | <a href='eliminar.php?id=" . $row["usua_id"] . "'>Eliminar</a></td>";
+                echo "</tr>";
+            }
+        } else {
+            echo "<tr><td colspan='4'>No hay usuarios registrados</td></tr>";
+        }
+        ?>
+    </table>
+</body>
+</html>
+
+
+conexion.php
+<?php
+$servername = "localhost";
+$username = "root";
+$password = "";
+$database = "bdweb";
+
+$conn = new mysqli($servername, $username, $password, $database);
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+?>
+
+crear.php
+
+<?php
+include 'conexion.php';
+
+$usua_nombre = $_POST['usua_nombre'];
+$usua_clave = $_POST['usua_clave'];
+
+$sql = "INSERT INTO usuario (usua_nombre, usua_clave) VALUES ('$usua_nombre', '$usua_clave')";
+
+if ($conn->query($sql) === TRUE) {
+    header("Location: index.php");
+} else {
+    echo "Error: " . $sql . "<br>" . $conn->error;
+}
+
+$conn->close();
+?>
+
+
+editar.php
+
+<?php
+include 'conexion.php';
+
+$id = $_GET['id'];
+
+// Obtener datos actuales
+$sql = "SELECT * FROM usuario WHERE usua_id=$id";
+$result = $conn->query($sql);
+$row = $result->fetch_assoc();
+
+$nombre_actual = $row['usua_nombre'];
+$clave_actual = $row['usua_clave'];
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $nombre_nuevo = $_POST['usua_nombre'];
+    $clave_nueva = $_POST['usua_clave'];
+
+    $sql = "UPDATE usuario SET usua_nombre='$nombre_nuevo', usua_clave='$clave_nueva' WHERE usua_id=$id";
+
+    if ($conn->query($sql) === TRUE) {
+        header("Location: index.php");
+    } else {
+        echo "Error: " . $sql . "<br>" . $conn->error;
+    }
+}
+
+$conn->close();
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Usuario</title>
+</head>
+<body>
+    <h2>Editar Usuario</h2>
+    <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]) . '?id=' . $id; ?>" method="post">
+        Nombre: <input type="text" name="usua_nombre" value="<?php echo $nombre_actual; ?>" required><br>
+        Clave: <input type="password" name="usua_clave" value="<?php echo $clave_actual; ?>" required><br>
+        <input type="submit" value="Actualizar">
+    </form>
+</body>
+</html>
+
+eliminar.php
+
+<?php
+include 'conexion.php';
+
+$id = $_GET['id'];
+
+$sql = "DELETE FROM usuario WHERE usua_id=$id";
+
+if ($conn->query($sql) === TRUE) {
+    header("Location: index.php");
+} else {
+    echo "Error: " . $sql . "<br>" . $conn->error;
+}
+
+$conn->close();
+?>
